@@ -1,0 +1,98 @@
+<%- include('includes/header')%>
+<section class="py-28">
+  <div class="container mx-auto px-4">
+    <!-- flash message -->
+    <%- include('includes/flash') %>
+    <div class="flex flex-col md:flex-row items-center justify-between">
+      <!-- heading -->
+      <div class="w-full md:w-7/12 text-center md:text-left">
+        <h1 class="text-6xl mb-10">Lorem ipsum dolor sit.</h1>
+        <p class="font-light leading-8 max-w-lg">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Expedita
+          ducimus quia quidem, inventore reiciendis soluta? Asperiores odio ipsa
+          tempora ullam quibusdam. Nemo ea reiciendis cupiditate. Perferendis
+          voluptas non obcaecati ipsa.
+        </p>
+      </div>
+      <!-- form -->
+      <div class="w-full md:w-4/12 pt-8 md:pt-0">
+        <div
+          class="
+            bg-gradient-to-r
+            from-indigo-300
+            to-pink-500
+            p-8
+            rounded
+            shadow-lg
+          "
+        >
+          <h2 class="text-3xl text-center mb-10">Sign Up Here</h2>
+          <form action="/register" method="POST" class="flex flex-col">
+            <input
+              name="username"
+              autocomplete="off"
+              type="text"
+              placeholder="Username"
+              class="
+                py-3
+                px-4
+                outline-none
+                shadow-md
+                rounded
+                my-5
+                focus:outline-none focus:ring focus:ring-indigo-500
+              "
+            />
+            <input
+              name="email"
+              autocomplete="off"
+              type="text"
+              placeholder="Email"
+              class="
+                py-3
+                px-4
+                outline-none
+                shadow-md
+                rounded
+                my-5
+                focus:outline-none focus:ring focus:ring-indigo-500
+              "
+            />
+            <input
+              name="password"
+              autocomplete="off"
+              type="password"
+              placeholder="Password"
+              class="
+                py-3
+                px-4
+                outline-none
+                shadow-md
+                rounded
+                my-5
+                focus:outline-none focus:ring focus:ring-indigo-500
+              "
+            />
+            <button
+              type="submit"
+              class="
+                bg-black
+                hover:bg-gray-800
+                rounded
+                p-3
+                text-white
+                transition
+                duration-500
+                ease-in-out
+                focus:outline-none focus:ring focus:ring-indigo-500
+              "
+            >
+              Sign Up
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('includes/footer')%>

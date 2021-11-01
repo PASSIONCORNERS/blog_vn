@@ -1,0 +1,11 @@
+<!-- failed message -->
+<% errors.forEach(function(message){ %>
+<div class="text-center bg-red-300 max-w-3xl mx-auto p-5 rounded mb-8">
+  <%= message %>
+</div>
+<!-- success message -->
+<% }) %> <% success.forEach(function(message){ %>
+<div class="text-center bg-green-300 max-w-3xl mx-auto p-5 rounded mb-8">
+  <%= message %>
+</div>
+<% }) %>

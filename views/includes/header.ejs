@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- tailwind -->
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <!-- main style -->
+    <link rel="stylesheet" href="/main.css" />
+    <!-- favicon -->
+    <link rel="icon" href="./img/favicon.png" />
+    <title>Blog VN</title>
+  </head>
+  <body>
+    <!-- === Header === -->
+    <header class="bg-black">
+      <div class="container mx-auto px-4">
+        <!-- Logged In -->
+        <% if(user){ %>
+        <nav class="flex items-center justify-between py-4">
+          <!-- logo -->
+          <div>
+            <a href="/">
+              <h1 class="text-3xl text-white uppercase">Blog VN</h1>
+            </a>
+          </div>
+          <div class="relative flex items-center">
+            <!-- hello -->
+            <div>
+              <p class="text-white mr-4">Hello, <%= user.username %></p>
+            </div>
+            <!-- search -->
+            <div>
+              <i
+                class="fas fa-search text-white mr-4 text-1xl cursor-pointer"
+              ></i>
+            </div>
+            <!-- avatar -->
+            <div id="menu-button">
+              <img
+                src="<%= user.avatar %>"
+                alt="avatar"
+                class="w-10 h-10 object-cover rounded-full cursor-pointer"
+              />
+            </div>
+            <!-- menu -->
+            <div
+              id="header-menu"
+              class="
+                hidden
+                absolute
+                w-32
+                top-0
+                left-0
+                transform
+                translate-x-14 translate-y-12
+              "
+            >
+              <ul class="bg-white p-4 rounded shadow flex flex-col">
+                <li
+                  class="
+                    my-1
+                    p-2
+                    hover:text-white hover:bg-gray-900
+                    rounded
+                    transition-all
+                  "
+                >
+                  <i class="fas fa-user"></i>
+                  <a href="/profile/<%= user._id %>">Profile</a>
+                </li>
+                <li
+                  class="
+                    my-1
+                    p-2
+                    hover:text-white hover:bg-gray-900
+                    rounded
+                    transition-all
+                  "
+                >
+                  <i class="fas fa-pencil-alt"></i>
+                  <a href="/create-post">Create</a>
+                </li>
+                <li
+                  class="
+                    my-1
+                    p-2
+                    hover:text-white hover:bg-gray-900
+                    rounded
+                    transition-all
+                  "
+                >
+                  <i class="fas fa-comments"></i>
+                  <a href="#">Chat</a>
+                </li>
+                <form action="/logout" method="POST">
+                  <button
+                    class="
+                      my-1
+                      p-2
+                      hover:text-white hover:bg-gray-900
+                      rounded
+                      transition-all
+                    "
+                  >
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                  </button>
+                </form>
+              </ul>
+            </div>
+          </div>
+        </nav>
+        <!-- Guest -->
+        <% } else { %>
+        <nav
+          class="flex flex-col md:flex-row items-center justify-between py-4"
+        >
+          <!-- logo -->
+          <div>
+            <a href="/" class="outline-none">
+              <h1 class="text-3xl text-white uppercase">Blog VN</h1>
+            </a>
+          </div>
+          <!-- form -->
+          <div>
+            <form
+              action="/login"
+              method="POST"
+              class="flex flex-col md:flex-row"
+            >
+              <input
+                name="email"
+                autocomplete="off"
+                type="text"
+                placeholder="Email"
+                class="
+                  py-1
+                  px-2
+                  rounded
+                  mx-1
+                  my-1
+                  md:my-0
+                  focus:outline-none focus:ring focus:ring-indigo-500
+                "
+              />
+              <input
+                name="password"
+                autocomplete="off"
+                type="password"
+                placeholder="Password"
+                class="
+                  py-1
+                  px-2
+                  rounded
+                  mx-1
+                  my-1
+                  md:my-0
+                  focus:outline-none focus:ring focus:ring-indigo-500
+                "
+              />
+              <button
+                class="
+                  bg-gradient-to-r
+                  from-indigo-300
+                  to-pink-500
+                  hover:opacity-75
+                  py-1
+                  px-4
+                  mx-1
+                  rounded
+                  text-white
+                  transition
+                  duration-500
+                  ease-in-out
+                  my-1
+                  md:my-0
+                  focus:outline-none focus:ring focus:ring-indigo-500
+                "
+              >
+                Login
+              </button>
+            </form>
+          </div>
+        </nav>
+        <% } %>
+      </div>
+    </header>
+  </body>
+</html>

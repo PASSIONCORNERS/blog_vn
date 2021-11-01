@@ -1,0 +1,95 @@
+<%- include('includes/header')%>
+<section class="py-28">
+  <!-- flash message -->
+  <%- include('includes/flash') %>
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col max-w-3xl mx-auto">
+      <!-- avatar -->
+      <div class="flex flex-col items-center mb-8 md:flex-row">
+        <div class="flex items-center w-4/12">
+          <img
+            src="<%= profileAvatar %>"
+            alt="avatar"
+            class="w-14 h-14 object-cover rounded-full mr-5"
+          />
+          <p class="text-2xl"><%= profileUsername %></p>
+        </div>
+        <!-- tabs -->
+        <div
+          class="
+            bg-black
+            rounded
+            p-3
+            text-white
+            flex
+            justify-around
+            w-full
+            mt-6
+            md:mt-0 md:w-11/12
+          "
+        >
+          <a
+            href="#"
+            class="
+              py-1
+              px-3
+              rounded
+              hover:bg-indigo-300
+              transition-all
+              tab-active
+            "
+            >Post 3</a
+          >
+          <a
+            href="#"
+            class="py-1 px-3 rounded hover:bg-indigo-300 transition-all"
+            >Follower 3</a
+          >
+          <a
+            href="#"
+            class="py-1 px-3 rounded hover:bg-indigo-300 transition-all"
+            >Following 3</a
+          >
+        </div>
+      </div>
+      <!-- blog posts -->
+      <% profilePosts.forEach((post)=>{ %>
+      <a
+        href="/post/<%= post._id %>"
+        class="
+          bg-gradient-to-r
+          from-indigo-300
+          to-pink-500
+          p-2
+          rounded
+          my-3
+          shadow-lg
+        "
+      >
+        <div class="flex items-center">
+          <!-- avatar -->
+          <div class="mr-4">
+            <img
+              src="<%= post.author.avatar %>"
+              alt="avatar"
+              class="w-10 h-10 object-cover rounded-full border"
+            />
+          </div>
+          <div>
+            <!-- title -->
+            <p class="text-1xl font-bold mr-3">
+              <%= post.title %>
+              <span class="font-light text-xs">
+                (<%= post.createdDate.getMonth() + 1 %>/<%=
+                post.createdDate.getDate() %>/<%= post.createdDate.getFullYear()
+                %> %>)</span
+              >
+            </p>
+          </div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<%- include('includes/footer')%>

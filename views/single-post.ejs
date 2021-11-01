@@ -1,0 +1,56 @@
+<%- include('includes/header')%>
+<section class="py-28">
+  <!-- flash message -->
+  <%- include('includes/flash') %>
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col max-w-3xl mx-auto">
+      <!-- post heading -->
+      <div class="flex justify-between">
+        <!-- title & author -->
+        <div>
+          <!-- title -->
+          <h2 class="text-3xl mb-8"><%= post.title %></h2>
+          <div class="flex items-center">
+            <!-- avatar -->
+            <a href="#" class="mr-4">
+              <img
+                src="<%= post.author.avatar %>"
+                alt="avatar"
+                class="w-10 h-10 object-cover rounded-full"
+              />
+            </a>
+            <p>
+              <a href="#">
+                By:
+                <span class="font-bold"><%= post.author.username %></span></a
+              >
+              <%= post.createdDate.getMonth() + 1 %>/<%=
+              post.createdDate.getDate() %>/<%= post.createdDate.getFullYear()
+              %> %>
+            </p>
+          </div>
+        </div>
+        <!-- actions -->
+        <% if(post.postOwner){ %>
+        <div class="flex">
+          <!-- edit -->
+          <a href="/post/<%= post._id %>/edit" class="mr-4">
+            <i class="fas fa-edit text-indigo-500 text-xl"></i>
+          </a>
+          <!-- delete -->
+          <form action="/post/<%= post._id %>/delete" method="POST">
+            <button>
+              <i class="fas fa-trash-alt text-red-600 text-xl"></i>
+            </button>
+          </form>
+        </div>
+        <% } %>
+      </div>
+      <!-- post content -->
+      <div class="mt-4">
+        <p class="leading-8"><%= post.body %></p>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('includes/footer')%>
