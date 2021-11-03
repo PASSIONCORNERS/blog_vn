@@ -122,35 +122,39 @@ Post.deletePost = function (postId, postOwner) {
     }
   });
 };
-Post.resuablePostQuery = function (operations, ownerId) {
+Post.resuablePostQuery = function (operations, ownerId, finalOperation = []) {
   return new Promise(async (resolve, reject) => {
     try {
       // custom operations
-      let aggOperations = operations.concat([
-        {
-          $lookup: {
-            from: "users", // colection to relate
-            localField: "author", // local field
-            foreignField: "_id", // relate field
-            as: "authorDocument", // match result
+      let aggOperations = operations
+        .concat([
+          {
+            $lookup: {
+              from: "users", // colection to relate
+              localField: "author", // local field
+              foreignField: "_id", // relate field
+              as: "authorDocument", // match result
+            },
           },
-        },
-        {
-          $project: {
-            title: 1,
-            body: 1,
-            createdDate: 1,
-            authorId: "$author",
-            author: { $arrayElemAt: ["$authorDocument", 0] },
+          {
+            $project: {
+              title: 1,
+              body: 1,
+              createdDate: 1,
+              authorId: "$author",
+              author: { $arrayElemAt: ["$authorDocument", 0] },
+            },
           },
-        },
-      ]);
+        ])
+        .concat(finalOperation);
       // perform aggregate
       let posts = await postCollection.aggregate(aggOperations).toArray();
       // filter out author field
       posts = posts.map((post) => {
         // post owner
         post.postOwner = post.authorId.equals(ownerId);
+        // for search no leak
+        post.authorId = undefined;
         // author
         post.author = {
           username: post.author.username,
@@ -193,6 +197,20 @@ Post.findAuthorPost = function (id) {
     { $match: { author: ObjectId(id) } },
     { $sort: { createdDate: -1 } },
   ]);
+};
+Post.search = function (searchTerm) {
+  return new Promise(async (resolve, reject) => {
+    if (typeof searchTerm == "string") {
+      let posts = await Post.resuablePostQuery(
+        [{ $match: { $text: { $search: searchTerm } } }],
+        undefined,
+        [{ $sort: { score: { $meta: "textScore" } } }]
+      );
+      resolve(posts);
+    } else {
+      reject();
+    }
+  });
 };
 module.exports = Post;
 

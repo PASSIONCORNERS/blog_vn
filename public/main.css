@@ -2,3 +2,14 @@
   --tw-bg-opacity: 1;
   background-color: rgba(196, 181, 253, var(--tw-bg-opacity));
 }
+.search-visible {
+  visibility: visible;
+  opacity: 1;
+  transform: scale(1);
+  will-change: visibility, transform, opacity;
+}
+.menu-visible {
+  visibility: visible;
+  opacity: 1;
+  will-change: visibility, transform, opacity;
+}

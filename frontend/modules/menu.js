@@ -14,6 +14,6 @@ export default class Menu {
   }
   // 3. method
   toggleMenu() {
-    this.menu.classList.toggle("hidden");
+    this.menu.classList.toggle("menu-visible");
   }
 }

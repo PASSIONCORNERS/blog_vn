@@ -62,6 +62,16 @@ exports.deletePost = (req, res) => {
       });
     });
 };
+// search
+exports.search = (req, res) => {
+  Post.search(req.body.searchTerm)
+    .then((posts) => {
+      res.json(posts);
+    })
+    .catch(() => {
+      res.json([]);
+    });
+};
 // render
 exports.renderCreatePostScreen = (req, res) => {
   res.render("create-post");
