@@ -1,6 +1,6 @@
 .tab-active {
   --tw-bg-opacity: 1;
-  background-color: rgba(196, 181, 253, var(--tw-bg-opacity));
+  background-color: rgba(165, 180, 252, var(--tw-bg-opacity));
 }
 .search-visible {
   visibility: visible;

@@ -6,7 +6,8 @@ const validator = require("validator");
 const md5 = require("md5");
 const usersCollection = require("../db").collection("users");
 const createToken = require("../utils/token");
-const { ObjectId } = require("bson");
+// const { ObjectId } = require("bson");
+const ObjectId = require("mongodb").ObjectId;
 
 // ==== Constructor ====
 let User = function (data, getAvatar) {
@@ -20,7 +21,7 @@ let User = function (data, getAvatar) {
     this.getAvatar();
   }
 };
-// ==== Prototyp ====
+// ==== Prototype ====
 // sanitize
 User.prototype.cleanUp = function () {
   // only string

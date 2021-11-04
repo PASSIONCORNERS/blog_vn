@@ -80,6 +80,7 @@ exports.renderSinglePost = (req, res) => {
   let ownerId = req.postOwner;
   Post.getSinglePost(req.params.id, ownerId)
     .then((post) => {
+      // console.log(post);
       res.render("single-post", { post });
     })
     .catch((err) => {
@@ -88,13 +89,6 @@ exports.renderSinglePost = (req, res) => {
         res.render("404");
       });
     });
-  // diff syntax
-  // try {
-  //   let post = await Post.getSinglePost(req.params.id);
-  //   res.render("single-post", { post });
-  // } catch {
-  //   res.send("Not Found");
-  // }
 };
 exports.renderEditPost = (req, res) => {
   Post.getSinglePost(req.params.id)

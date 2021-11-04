@@ -5,8 +5,8 @@
   <div class="container mx-auto px-4">
     <div class="flex flex-col max-w-3xl mx-auto">
       <!-- avatar -->
-      <div class="flex flex-col items-center mb-8 md:flex-row">
-        <div class="flex items-center w-4/12">
+      <div class="flex items-center mb-8">
+        <div class="flex items-center mr-5">
           <img
             src="<%= profileAvatar %>"
             alt="avatar"
@@ -14,6 +14,56 @@
           />
           <p class="text-2xl"><%= profileUsername %></p>
         </div>
+
+        <% if (user) { if (isFollowing) { %>
+
+        <!-- unfollow -->
+        <form
+          action="/removeFollow/<%= profileId %>"
+          method="POST"
+          class="
+            bg-red-500
+            py-2
+            px-4
+            rounded
+            text-white
+            transition
+            duration-500
+            ease-in-out
+            hover:text-black
+            cursor-pointer
+          "
+        >
+          <i class="fas fa-plus"></i>
+          <button>Unfollow</button>
+        </form>
+        <% } else { %>
+        <!-- follow -->
+        <form
+          action="/addFollow/<%= profileId %>"
+          method="POST"
+          class="
+            bg-gradient-to-r
+            from-indigo-300
+            to-pink-500
+            py-2
+            px-4
+            rounded
+            text-white
+            transition
+            duration-500
+            ease-in-out
+            hover:text-black
+            cursor-pointer
+          "
+        >
+          <i class="fas fa-plus"></i>
+          <button>Follow</button>
+        </form>
+        <% } } %>
+      </div>
+      <!-- tabs -->
+      <div>
         <!-- tabs -->
         <div
           class="
@@ -25,31 +75,37 @@
             justify-around
             w-full
             mt-6
-            md:mt-0 md:w-11/12
+            md:mt-0
           "
         >
-          <a
-            href="#"
-            class="
-              py-1
-              px-3
-              rounded
-              hover:bg-indigo-300
-              transition-all
-              tab-active
-            "
-            >Post 3</a
-          >
-          <a
-            href="#"
-            class="py-1 px-3 rounded hover:bg-indigo-300 transition-all"
-            >Follower 3</a
-          >
-          <a
-            href="#"
-            class="py-1 px-3 rounded hover:bg-indigo-300 transition-all"
-            >Following 3</a
-          >
+          <form action="" method="POST">
+            <button
+              class="
+                py-1
+                px-2
+                rounded
+                hover:bg-indigo-300
+                transition-all
+                tab-active
+              "
+            >
+              Post 3
+            </button>
+          </form>
+          <form action="">
+            <button
+              class="py-1 px-2 rounded hover:bg-indigo-300 transition-all"
+            >
+              Follower 3
+            </button>
+          </form>
+          <form action="">
+            <button
+              class="py-1 px-2 rounded hover:bg-indigo-300 transition-all"
+            >
+              Following 3
+            </button>
+          </form>
         </div>
       </div>
       <!-- blog posts -->

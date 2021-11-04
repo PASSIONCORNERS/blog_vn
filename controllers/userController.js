@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Post = require("../models/Post");
+const Follow = require("../models/Follow");
 
 // register
 exports.register = async (req, res) => {
@@ -98,6 +99,23 @@ exports.findUser = (req, res, next) => {
       res.render("404");
     });
 };
+// shared data
+exports.sharedProfile = async (req, res, next) => {
+  let isFollowing = false;
+  if (req.session.user) {
+    isFollowing = await new Follow()
+      .isFollowing(req.params.userId, req.postOwner)
+      .then((value) => {
+        // console.log("value", value.author);
+        isFollowing = value;
+        req.isFollowing = isFollowing;
+        next();
+      })
+      .catch(() => {
+        next();
+      });
+  }
+};
 // renders
 exports.renderHome = (req, res) => {
   if (req.session.user) {
@@ -120,13 +138,17 @@ exports.renderActivate = (req, res) => {
   }
 };
 exports.renderProfile = (req, res) => {
+  console.log("from Controller", req.isFollowing);
   // pull in profile posts
   Post.findAuthorPost(req.params.userId)
     .then((posts) => {
       res.render("profile", {
         profileUsername: req.profileUser.username,
         profileAvatar: req.profileUser.avatar,
+        profileId: req.params.userId,
         profilePosts: posts,
+        isFollowing: req.isFollowing,
+        // followedUsername: req.followingUsername,
       });
     })
     .catch((err) => {

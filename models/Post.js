@@ -154,7 +154,8 @@ Post.resuablePostQuery = function (operations, ownerId, finalOperation = []) {
         // post owner
         post.postOwner = post.authorId.equals(ownerId);
         // for search no leak
-        post.authorId = undefined;
+        // post.authorId = undefined;
+
         // author
         post.author = {
           username: post.author.username,
