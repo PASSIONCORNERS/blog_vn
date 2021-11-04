@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Post = require("../models/Post");
 const Follow = require("../models/Follow");
+const ObjectId = require("mongodb").ObjectId;
 
 // register
 exports.register = async (req, res) => {
@@ -101,13 +102,21 @@ exports.findUser = (req, res, next) => {
 };
 // shared data
 exports.sharedProfile = async (req, res, next) => {
+  let isYourProfile = false;
   let isFollowing = false;
   if (req.session.user) {
+    // isYourProfile
+    // let id = ObjectId(req.params.userId)
+    // let id2 = ObjectId(req.postOwner)
     isFollowing = await new Follow()
       .isFollowing(req.params.userId, req.postOwner)
       .then((value) => {
         // console.log("value", value.author);
+        isYourProfile = ObjectId(req.params.userId).equals(
+          ObjectId(req.postOwner)
+        );
         isFollowing = value;
+        req.isYourProfile = isYourProfile;
         req.isFollowing = isFollowing;
         next();
       })
@@ -138,7 +147,7 @@ exports.renderActivate = (req, res) => {
   }
 };
 exports.renderProfile = (req, res) => {
-  console.log("from Controller", req.isFollowing);
+  // console.log("from Controller", req.isFollowing);
   // pull in profile posts
   Post.findAuthorPost(req.params.userId)
     .then((posts) => {
@@ -148,6 +157,7 @@ exports.renderProfile = (req, res) => {
         profileId: req.params.userId,
         profilePosts: posts,
         isFollowing: req.isFollowing,
+        isProfile: req.isYourProfile,
         // followedUsername: req.followingUsername,
       });
     })

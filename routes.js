@@ -47,5 +47,10 @@ router.post(
   userController.loggedIn,
   followController.follow
 );
+router.post(
+  "/removeFollow/:userId",
+  userController.loggedIn,
+  followController.unfollow
+);
 
 module.exports = router;
