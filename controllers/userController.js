@@ -132,9 +132,11 @@ exports.sharedProfile = async (req, res, next) => {
   next();
 };
 // renders
-exports.renderHome = (req, res) => {
+exports.renderHome = async (req, res) => {
   if (req.session.user) {
-    res.render("dashboard");
+    // fetch post
+    let posts = await Post.getFeed(req.session.user._id);
+    res.render("dashboard", { posts });
   } else {
     res.render("signup");
   }

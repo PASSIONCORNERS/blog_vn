@@ -4,10 +4,11 @@
     <!-- flash message -->
     <%- include('includes/flash') %>
     <div class="flex flex-col max-w-3xl mx-auto">
+      <% if (posts.length) { %>
       <h2 class="text-3xl text-center mb-8">Latest Blog Post</h2>
-      <!-- blog 1 -->
+      <% posts.forEach((post)=>{ %>
       <a
-        href="#"
+        href="/post/<%= post._id %>"
         class="
           bg-gradient-to-r
           from-indigo-300
@@ -27,7 +28,7 @@
           <!-- avatar -->
           <div class="mr-4">
             <img
-              src="https://source.unsplash.com/random"
+              src="<%= post.author.avatar %>"
               alt="avatar"
               class="w-10 h-10 object-cover rounded-full border"
             />
@@ -35,111 +36,22 @@
           <div>
             <!-- title -->
             <p class="text-1xl font-bold mr-3">
-              Blog Post #1
-              <span class="font-light text-xs"> (08/14/2022)</span>
+              <%= post.title %>
+              <span class="font-light text-xs">
+                (<%= post.createdDate.getMonth() + 1 %>/<%=
+                post.createdDate.getDate() %>/<%= post.createdDate.getFullYear()
+                %> %>)</span
+              >
             </p>
-            <div class="flex items-center">
-              <!-- author -->
-              <p class="text-gray-100 font-light text-xs">
-                By:
-                <span class="font-bold text-gray-100">Love Love</span>
-              </p>
-              <!-- date -->
-              <!-- <p class="text-white font-light text-sm">on 08/14/2022</p> -->
-            </div>
           </div>
         </div>
       </a>
-      <!-- blog 2 -->
-      <a
-        href="#"
-        class="
-          bg-gradient-to-r
-          from-indigo-300
-          to-pink-500
-          p-2
-          rounded
-          my-3
-          shadow-lg
-          transition
-          duration-500
-          ease-in-out
-          transform
-          hover:scale-105
-        "
-      >
-        <div class="flex items-center">
-          <!-- avatar -->
-          <div class="mr-4">
-            <img
-              src="https://source.unsplash.com/random/1"
-              alt="avatar"
-              class="w-10 h-10 object-cover rounded-full border"
-            />
-          </div>
-          <div>
-            <!-- title -->
-            <p class="text-1xl font-bold mr-3">
-              Blog Post #2
-              <span class="font-light text-xs"> (08/13/2022)</span>
-            </p>
-            <div class="flex items-center">
-              <!-- author -->
-              <p class="text-gray-100 font-light text-xs">
-                By:
-                <span class="font-bold text-gray-100">Love Love</span>
-              </p>
-              <!-- date -->
-              <!-- <p class="text-white font-light text-sm">on 08/14/2022</p> -->
-            </div>
-          </div>
-        </div>
-      </a>
-      <!-- blog 3 -->
-      <a
-        href="#"
-        class="
-          bg-gradient-to-r
-          from-indigo-300
-          to-pink-500
-          p-2
-          rounded
-          my-3
-          shadow-lg
-          transition
-          duration-500
-          ease-in-out
-          transform
-          hover:scale-105
-        "
-      >
-        <div class="flex items-center">
-          <!-- avatar -->
-          <div class="mr-4">
-            <img
-              src="https://source.unsplash.com/random/2"
-              alt="avatar"
-              class="w-10 h-10 object-cover rounded-full border"
-            />
-          </div>
-          <div>
-            <!-- title -->
-            <p class="text-1xl font-bold mr-3">
-              Blog Post #3
-              <span class="font-light text-xs"> (08/12/2022)</span>
-            </p>
-            <div class="flex items-center">
-              <!-- author -->
-              <p class="text-gray-100 font-light text-xs">
-                By:
-                <span class="font-bold text-gray-100">Love Love</span>
-              </p>
-              <!-- date -->
-              <!-- <p class="text-white font-light text-sm">on 08/14/2022</p> -->
-            </div>
-          </div>
-        </div>
-      </a>
+      <% }) } else { %>
+      <div>
+        <h2 class="text-3xl text-center mb-2">Your Feed Is Empty</h2>
+        <p class="text-center mb-8">Try following someone 🙂</p>
+      </div>
+      <%} %>
     </div>
   </div>
 </section>

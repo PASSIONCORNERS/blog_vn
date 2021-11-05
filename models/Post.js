@@ -1,5 +1,6 @@
 const ObjectId = require("mongodb").ObjectId;
 const postCollection = require("../db").collection("posts");
+const followsCollection = require("../db").collection("follows");
 const User = require("./User");
 
 // === Constructor ===
@@ -218,6 +219,20 @@ Post.countPost = function (id) {
     let count = await postCollection.countDocuments({ author: ObjectId(id) });
     resolve(count);
   });
+};
+Post.getFeed = async function (id) {
+  // get followers
+  let followedUser = await followsCollection
+    .find({ authorId: ObjectId(id) })
+    .toArray();
+  followedUser = followedUser.map((followDoc) => {
+    return followDoc.followedId;
+  });
+  // get follower posts
+  return Post.resuablePostQuery([
+    { $match: { author: { $in: followedUser } } },
+    { $sort: { createdDate: -1 } },
+  ]);
 };
 module.exports = Post;
 
