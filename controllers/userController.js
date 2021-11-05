@@ -105,25 +105,31 @@ exports.sharedProfile = async (req, res, next) => {
   let isYourProfile = false;
   let isFollowing = false;
   if (req.session.user) {
-    // isYourProfile
-    // let id = ObjectId(req.params.userId)
-    // let id2 = ObjectId(req.postOwner)
-    isFollowing = await new Follow()
+    isFollowing = new Follow()
       .isFollowing(req.params.userId, req.postOwner)
       .then((value) => {
-        // console.log("value", value.author);
         isYourProfile = ObjectId(req.params.userId).equals(
           ObjectId(req.postOwner)
         );
         isFollowing = value;
         req.isYourProfile = isYourProfile;
         req.isFollowing = isFollowing;
-        next();
       })
       .catch(() => {
-        next();
+        next(false);
       });
   }
+  // get counts for tab
+  let postCount = Post.countPost(req.params.userId);
+  let followerCount = new Follow().countFollower(req.params.userId);
+  let followingCount = new Follow().countFollowing(req.params.userId);
+  let [postCountResult, followerCountResult, followingCountResult] =
+    await Promise.all([postCount, followerCount, followingCount]);
+  // pass to req
+  req.postCount = postCountResult;
+  req.followerCount = followerCountResult;
+  req.followingCount = followingCountResult;
+  next();
 };
 // renders
 exports.renderHome = (req, res) => {
@@ -147,18 +153,70 @@ exports.renderActivate = (req, res) => {
   }
 };
 exports.renderProfile = (req, res) => {
-  // console.log("from Controller", req.isFollowing);
   // pull in profile posts
   Post.findAuthorPost(req.params.userId)
     .then((posts) => {
       res.render("profile", {
+        currentPage: "profile",
+        profilePosts: posts,
+        profileId: req.params.userId,
         profileUsername: req.profileUser.username,
         profileAvatar: req.profileUser.avatar,
-        profileId: req.params.userId,
-        profilePosts: posts,
         isFollowing: req.isFollowing,
         isProfile: req.isYourProfile,
-        // followedUsername: req.followingUsername,
+        counts: {
+          postCount: req.postCount,
+          followerCount: req.followerCount,
+          followingCount: req.followingCount,
+        },
+      });
+    })
+    .catch((err) => {
+      res.render("404");
+    });
+};
+exports.renderFollower = (req, res) => {
+  new Follow()
+    .getFollowerById(req.params.userId)
+    .then((az) => {
+      console.log();
+      res.render("profile-followers", {
+        currentPage: "followers",
+        followers: az,
+        profileId: req.params.userId,
+        profileUsername: req.profileUser.username,
+        profileAvatar: req.profileUser.avatar,
+        isFollowing: req.isFollowing,
+        isProfile: req.isYourProfile,
+        counts: {
+          postCount: req.postCount,
+          followerCount: req.followerCount,
+          followingCount: req.followingCount,
+        },
+      });
+    })
+    .catch(() => {
+      res.render("404");
+    });
+};
+exports.renderFollowing = (req, res) => {
+  new Follow()
+    .getFollowingById(req.params.userId)
+    .then((az) => {
+      console.log();
+      res.render("profile-followings", {
+        currentPage: "followings",
+        followings: az,
+        profileId: req.params.userId,
+        profileUsername: req.profileUser.username,
+        profileAvatar: req.profileUser.avatar,
+        isFollowing: req.isFollowing,
+        isProfile: req.isYourProfile,
+        counts: {
+          postCount: req.postCount,
+          followerCount: req.followerCount,
+          followingCount: req.followingCount,
+        },
       });
     })
     .catch((err) => {

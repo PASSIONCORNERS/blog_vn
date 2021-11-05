@@ -1,0 +1,83 @@
+<!-- tabs -->
+<div>
+  <div
+    class="
+      bg-black
+      rounded
+      p-3
+      text-white
+      flex
+      justify-around
+      w-full
+      mt-6
+      md:mt-0
+    "
+  >
+    <a href="/profile/<%= profileId %>">
+      <button
+        class="
+          py-1
+          px-2
+          rounded
+          hover:bg-indigo-300
+          transition-all
+          <%=
+          currentPage
+          ==
+          'profile'
+          ?
+          'tab-active'
+          :
+          ''
+          %>
+        "
+      >
+        Post <%= counts.postCount %>
+      </button>
+    </a>
+    <a href="/profile/<%= profileId %>/followers">
+      <button
+        class="
+          py-1
+          px-2
+          rounded
+          hover:bg-indigo-300
+          transition-all
+          <%=
+          currentPage
+          ==
+          'followers'
+          ?
+          'tab-active'
+          :
+          ''
+          %>
+        "
+      >
+        Follower <%= counts.followerCount %>
+      </button>
+    </a>
+    <a href="/profile/<%= profileId %>/followings">
+      <button
+        class="
+          py-1
+          px-2
+          rounded
+          hover:bg-indigo-300
+          transition-all
+          <%=
+          currentPage
+          ==
+          'followings'
+          ?
+          'tab-active'
+          :
+          ''
+          %>
+        "
+      >
+        Following <%= counts.followingCount %>
+      </button>
+    </a>
+  </div>
+</div>

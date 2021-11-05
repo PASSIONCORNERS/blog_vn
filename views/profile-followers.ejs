@@ -63,9 +63,9 @@
       <!-- tabs -->
       <%- include('includes/profileTab') %>
       <!-- blog posts -->
-      <% profilePosts.forEach((post)=>{ %>
+      <% followers.forEach((follower)=>{ %>
       <a
-        href="/post/<%= post._id %>"
+        href="/profile/<%= follower._id %>"
         class="
           bg-gradient-to-r
           from-indigo-300
@@ -85,21 +85,14 @@
           <!-- avatar -->
           <div class="mr-4">
             <img
-              src="<%= post.author.avatar %>"
+              src="<%= follower.avatar %>"
               alt="avatar"
               class="w-10 h-10 object-cover rounded-full border"
             />
           </div>
           <div>
             <!-- title -->
-            <p class="text-1xl font-bold mr-3">
-              <%= post.title %>
-              <span class="font-light text-xs">
-                (<%= post.createdDate.getMonth() + 1 %>/<%=
-                post.createdDate.getDate() %>/<%= post.createdDate.getFullYear()
-                %> %>)</span
-              >
-            </p>
+            <p class="text-1xl font-bold mr-3"><%= follower.username %></p>
           </div>
         </div>
       </a>

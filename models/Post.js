@@ -213,6 +213,12 @@ Post.search = function (searchTerm) {
     }
   });
 };
+Post.countPost = function (id) {
+  return new Promise(async (resolve, reject) => {
+    let count = await postCollection.countDocuments({ author: ObjectId(id) });
+    resolve(count);
+  });
+};
 module.exports = Post;
 
 // === Note ===

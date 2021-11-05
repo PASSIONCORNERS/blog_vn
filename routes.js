@@ -19,6 +19,18 @@ router.get(
   userController.sharedProfile,
   userController.renderProfile
 );
+router.get(
+  "/profile/:userId/followers",
+  userController.findUser,
+  userController.sharedProfile,
+  userController.renderFollower
+);
+router.get(
+  "/profile/:userId/followings",
+  userController.findUser,
+  userController.sharedProfile,
+  userController.renderFollowing
+);
 
 // posts related
 router.get(

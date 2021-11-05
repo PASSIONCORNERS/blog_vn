@@ -2,8 +2,6 @@ const Follow = require("../models/Follow");
 
 exports.follow = (req, res) => {
   let follow = new Follow(req.params.userId, req.postOwner);
-  console.log("Params", req.params.userId);
-  console.log("Post Owner", req.postOwner);
   follow
     .create()
     .then(() => {
