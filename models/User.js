@@ -240,7 +240,10 @@ User.prototype.login = function () {
       await usersCollection
         .findOne({ email: this.data.email })
         .then((result) => {
-          if (result && bcrypt.compare(this.data.password, result.password)) {
+          if (
+            result &&
+            bcrypt.compareSync(this.data.password, result.password)
+          ) {
             this.data = result;
             // get avatar
             this.getAvatar();
