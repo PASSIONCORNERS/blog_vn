@@ -1,11 +1,15 @@
 const express = require("express");
+const router = require("./routes");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
+const csrf = require("csurf");
 
 // === Express ===
 const app = express();
+// data to req obj
 app.use(express.urlencoded({ extended: false }));
+// enable json
 app.use(express.json());
 
 // === Session ===
@@ -19,22 +23,43 @@ let sessionOptions = session({
     httpOnly: true,
   },
 });
+
 // === App Use ===
 app.use(sessionOptions);
-app.use(express.static("public"));
 app.use(flash());
+app.use(express.static("public"));
+
+// === CSRF ===
+app.use(csrf());
+app.use(function (req, res, next) {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+app.use(function (err, req, res, next) {
+  if (err) {
+    if (err.code == "EBADCSRFTOKEN") {
+      req.flash("errors", "Cross site request forgery detected");
+      req.session.save(() => {
+        res.redirect("/");
+      });
+    } else {
+      res.render("404");
+    }
+  }
+});
+
 // === MW ===
 app.use(function (req, res, next) {
-  // make flash available
+  // make flash global
   res.locals.errors = req.flash("errors");
   res.locals.success = req.flash("success");
-  // make visitor id available in the request object
+  // get current user Id
   if (req.session.user) {
-    req.postOwner = req.session.user._id;
+    req.currentUserId = req.session.user._id;
   } else {
-    req.postOwner = 0;
+    req.currentUserId = 0;
   }
-  // make user available
+  // make user global
   res.locals.user = req.session.user;
   next();
 });
@@ -43,8 +68,7 @@ app.use(function (req, res, next) {
 app.set("views", "views");
 app.set("view engine", "ejs");
 
-// === Listen ===
-const router = require("./routes");
+// === Routes ===
 app.use("/", router);
 
 module.exports = app;

@@ -2,18 +2,19 @@ import axios from "axios";
 import DOMPurify from "dompurify";
 
 export default class Search {
-  // selector
+  // select
   constructor() {
+    this._csrf = document.querySelector('[name="_csrf"]').value;
     this.injectHTML();
     this.searchBox = document.querySelector("#search");
     this.searchIcon = document.querySelector("#search-open");
-    this.searchClose = document.querySelector("#search-close");
     this.searchField = document.querySelector("#search-field");
+    this.searchClose = document.querySelector("#search-close");
+    this.searchLoad = document.querySelector("#search-load");
     this.searchResultWrap = document.querySelector("#search-result-wrap");
     this.searchResult = document.querySelector("#search-result");
-    this.searchLoad = document.querySelector("#search-load");
-    this.searchTimer;
     this.prevValue = "";
+    this.searchTimer;
     this.events();
   }
   // events
@@ -40,15 +41,14 @@ export default class Search {
   }
   keyHandler() {
     let value = this.searchField.value;
-
+    // if field is empty
     if (value == "") {
       clearTimeout(this.searchTimer);
       this.hideLoader();
       this.hideResult();
     }
-
+    // valued and value changed
     if (value != "" && value != this.prevValue) {
-      clearTimeout(this.searchTimer);
       this.showLoader();
       this.hideResult();
       this.searchTimer = setTimeout(() => {
@@ -57,60 +57,11 @@ export default class Search {
     }
     this.prevValue = value;
   }
-  sendRequest() {
-    axios
-      .post("/search", { searchTerm: this.searchField.value })
-      .then((res) => {
-        this.renderResult(res.data);
-      })
-      .catch(() => {
-        console.log("Test Failed");
-      });
+  showResult() {
+    this.searchResultWrap.classList.remove("invisible");
   }
-  renderResult(posts) {
-    if (posts.length) {
-      this.searchResult.innerHTML = DOMPurify.sanitize(
-        `
-        <div>
-          <div class="bg-indigo-400 p-6 rounded">
-            <h1 class="text-2xl text-white">Search result (${
-              posts.length > 1 ? `${posts.length} posts found` : "1 post found"
-            })</h1>
-          </div>
-          
-          ${posts
-            .map((post) => {
-              let postDate = new Date(post.createdDate);
-              return `
-                <a href="/post/${
-                  post._id
-                }" class="flex items-center my-6 hover:bg-indigo-100 transition-all p-2 rounded">
-                  <div class="mr-3">
-                    <img src="${
-                      post.author.avatar
-                    }" alt="avatar" class="w-10 h-10 object-cover rounded-full max-w-none">
-                  </div>
-                  <div class="flex items-center">
-                    <p class="text-xl font-bold mr-3">${post.title}</p>
-                    <span>By: ${post.author.username} (${
-                postDate.getMonth() + 1
-              }/${postDate.getDate()}/${postDate.getFullYear()})</span>
-                  </div>
-                </a>
-                <hr>
-            `;
-            })
-            .join("")}
-        </div>
-        `
-      );
-    } else {
-      this.searchResult.innerHTML = `
-        <p class="text-red-400">That post does not exist.</p>
-      `;
-    }
-    this.hideLoader();
-    this.showResult();
+  hideResult() {
+    this.searchResultWrap.classList.add("invisible");
   }
   showLoader() {
     this.searchLoad.classList.remove("invisible");
@@ -118,11 +69,63 @@ export default class Search {
   hideLoader() {
     this.searchLoad.classList.add("invisible");
   }
-  showResult() {
-    this.searchResultWrap.classList.remove("invisible");
+  sendRequest() {
+    axios
+      .post("/search", {
+        _csrf: this._csrf,
+        searchTerm: this.searchField.value,
+      })
+      .then((res) => {
+        this.renderResult(res.data);
+      })
+      .catch(() => {
+        console.log("failed");
+      });
   }
-  hideResult() {
-    this.searchResultWrap.classList.add("invisible");
+  renderResult(posts) {
+    if (posts.length) {
+      this.searchResult.innerHTML = DOMPurify.sanitize(
+        `
+      <div>
+        <div class="bg-indigo-400 p-6 rounded">
+          <h1 class="text-2xl text-white">Search result (${
+            posts.length > 1 ? `${posts.length} posts found` : "1 post found"
+          })</h1>
+        </div>
+        
+        ${posts
+          .map((post) => {
+            let postDate = new Date(post.createdDate);
+            return `
+              <a href="/post/${
+                post._id
+              }" class="flex items-center my-3 hover:bg-indigo-100 transition-all p-2 rounded">
+                <div class="mr-3">
+                  <img src="${
+                    post.author.avatar
+                  }" alt="avatar" class="w-10 h-10 object-cover rounded-full max-w-none">
+                </div>
+                <div class="flex items-center">
+                  <p class="text-xl font-bold mr-3">${post.title}</p>
+                  <span>By: ${post.author.username} (${
+              postDate.getMonth() + 1
+            }/${postDate.getDate()}/${postDate.getFullYear()})</span>
+                </div>
+              </a>
+              <hr>
+          `;
+          })
+          .join("")}
+      </div>
+      `
+      );
+    } else {
+      this.searchResult.innerHTML = `
+      <p class="text-red-400">That post does not exist.</p>
+    `;
+    }
+    this.hideLoader();
+    this.showResult();
   }
   injectHTML() {
     document.body.insertAdjacentHTML(
@@ -130,7 +133,7 @@ export default class Search {
       `
     <div id="search" class="fixed h-screen w-screen top-0 left-0 bg-black bg-opacity-80 flex flex-col items-center px-4 opacity-0 transform scale-125 invisible overflow-hidden transition-all duration-500 ease-in-out">
   
-    <div class="mt-52 bg-black p-4 w-full md:w-7/12 h-28 rounded flex relative">
+    <div class="mt-12 bg-black p-4 w-full md:w-7/12 h-28 rounded flex relative">
     
       <div id="search-close" class="absolute top-0 right-0 transform -translate-y-full cursor-pointer">
         <i class="far fa-times-circle text-indigo-400 text-2xl"></i>
@@ -148,7 +151,7 @@ export default class Search {
       </svg>
     </div>
 
-    <div id="search-result-wrap" class="mt-10 bg-white w-full md:w-7/12 rounded-md shadow invisible">
+    <div id="search-result-wrap" class="mt-2 bg-white w-full md:w-7/12 rounded-md shadow invisible">
       <div class="p-4" id="search-result"></div>
     </div>
   </div>

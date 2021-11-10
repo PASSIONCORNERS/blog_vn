@@ -33,7 +33,7 @@
       </button></a
     >
     <form
-      action="/post/<%= post._id %>/edit"
+      action="/post/<%= post._id %>/update"
       method="POST"
       class="flex flex-col"
     >
@@ -65,6 +65,7 @@
       >
 <%= post.body %></textarea
       >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button
         class="
           mt-4

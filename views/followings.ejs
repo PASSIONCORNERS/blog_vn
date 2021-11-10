@@ -17,7 +17,7 @@
         <% if (user && !isProfile) { if (isFollowing) { %>
         <!-- unfollow -->
         <form
-          action="/removeFollow/<%= profileId %>"
+          action="/unfollow/<%= profileUserId %>"
           method="POST"
           class="
             bg-red-500
@@ -63,9 +63,9 @@
       <!-- tabs -->
       <%- include('includes/profileTab') %>
       <!-- blog posts -->
-      <% followers.forEach((follower)=>{ %>
+      <% followings.forEach((following)=>{ %>
       <a
-        href="/profile/<%= follower._id %>"
+        href="/profile/<%= following._id %>"
         class="
           bg-gradient-to-r
           from-indigo-300
@@ -85,14 +85,14 @@
           <!-- avatar -->
           <div class="mr-4">
             <img
-              src="<%= follower.avatar %>"
+              src="<%= following.avatar %>"
               alt="avatar"
               class="w-10 h-10 object-cover rounded-full border"
             />
           </div>
           <div>
             <!-- title -->
-            <p class="text-1xl font-bold mr-3"><%= follower.username %></p>
+            <p class="text-1xl font-bold mr-3"><%= following.username %></p>
           </div>
         </div>
       </a>

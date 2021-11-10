@@ -1,290 +1,297 @@
 const ObjectId = require("mongodb").ObjectId;
-const postCollection = require("../db").collection("posts");
+const postsCollection = require("../db").collection("posts");
 const followsCollection = require("../db").collection("follows");
-const User = require("./User");
+const User = require("../models/User");
 
-// === Constructor ===
-let Post = function (data, userId, postId) {
-  this.data = data;
-  this.userId = userId;
-  this.errors = [];
-  this.postId = postId;
-};
-// === Prototype ===
-// sanitize
-Post.prototype.cleanUp = function () {
-  if (typeof this.data.title != "string") {
-    this.data.title = "";
+class Post {
+  constructor(data, authorId, postId) {
+    this.data = data;
+    this.authorId = authorId;
+    this.postId = postId;
+    this.errors = [];
   }
-  if (typeof this.data.body != "string") {
-    this.data.body = "";
-  }
-  // only add our defined properties
-  this.data = {
-    title: this.data.title.trim(),
-    body: this.data.body.trim(),
-    // need to allow created date
-    createdDate: new Date(),
-    // need to allow author id
-    author: ObjectId(this.userId),
-  };
-};
-// validate
-Post.prototype.validate = function () {
-  if (this.data.title == "") {
-    this.errors.push("Please provide a title");
-  }
-  if (this.data.body == "") {
-    this.errors.push("Please provide some content");
-  }
-};
-// create
-Post.prototype.create = function () {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // sanitize
-      this.cleanUp();
-      // validate
-      this.validate();
-      // sanitize & validate success
-      if (!this.errors.length) {
-        // save post
-        postCollection
-          .insertOne(this.data)
-          .then((postInfo) => {
-            // new post id
-            resolve(postInfo.insertedId);
-          })
-          .catch((err) => {
-            this.errors.push(err.message);
-            reject(this.errors);
-          });
-      } else {
-        reject(this.errors);
-      }
-    } catch (err) {
-      reject(err);
+  // cleanup
+  cleanUp() {
+    if (typeof this.data.title != "string") {
+      this.data.title = "";
     }
-  });
-};
-// update
-Post.prototype.editPost = function () {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let post = await Post.getSinglePost(this.postId, this.userId);
-      if (post.postOwner) {
-        let status = await this.updatePost();
-        resolve(status);
-      } else {
-        reject();
-      }
-    } catch {
-      reject();
+    if (typeof this.data.body != "string") {
+      this.data.body = "";
     }
-  });
-};
-Post.prototype.updatePost = function () {
-  return new Promise(async (resolve, reject) => {
-    try {
-      this.cleanUp();
-      this.validate();
-      if (!this.errors.length) {
-        await postCollection.findOneAndUpdate(
-          { _id: ObjectId(this.postId) },
-          {
-            $set: {
-              title: this.data.title,
-              body: this.data.body,
+    // add to data properties
+    this.data = {
+      title: this.data.title.trim(),
+      body: this.data.body.trim(),
+      // addtional fields
+      createdDate: new Date(),
+      author: ObjectId(this.authorId),
+    };
+  }
+  // validate
+  validate() {
+    if (this.data.title == "") {
+      this.errors.push("Please provide a title");
+    }
+    if (this.data.body == "") {
+      this.errors.push("Please provide some content");
+    }
+  }
+  // resuable query
+  resuablePostQuery(operation, ownerId, finalOperation = []) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // custom operation conact with repeat operation
+        let repeatOperations = operation
+          .concat([
+            {
+              $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "_id",
+                as: "authorDetail",
+              },
             },
-          }
+            {
+              $project: {
+                title: 1,
+                body: 1,
+                createdDate: 1,
+                authorId: "$author",
+                author: { $arrayElemAt: ["$authorDetail", 0] },
+              },
+            },
+          ])
+          .concat(finalOperation);
+        // perform the aggregation
+        let posts = await postsCollection.aggregate(repeatOperations).toArray();
+        // filter out result
+        posts = posts.map((post) => {
+          // post owner
+          post.postOwner = post.authorId.equals(ownerId);
+          // author
+          post.author = {
+            username: post.author.username,
+            avatar: new User(post.author, true).avatar,
+            _id: post.author._id,
+          };
+          return post;
+        });
+        resolve(posts);
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  // create
+  create() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // cleanup
+        this.cleanUp();
+        // validate
+        this.validate();
+        if (!this.errors.length) {
+          // save post
+          postsCollection
+            .insertOne(this.data)
+            .then((newPost) => {
+              resolve(newPost.insertedId);
+            })
+            .catch((err) => {
+              this.errors.push(err.message);
+              reject(this.errors);
+            });
+        } else {
+          reject(this.errors);
+        }
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  // read (single post)
+  readSingle(postId, currentUserId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // check post id
+        if (typeof postId != "string" || !ObjectId.isValid(postId)) {
+          this.errors.push("Invalid request");
+          reject(this.errors);
+          // end function
+          return;
+        }
+        // use resuablePostQuery
+        let posts = await this.resuablePostQuery(
+          [{ $match: { _id: ObjectId(postId) } }],
+          currentUserId
         );
-        resolve("success");
-      } else {
+        // check post existence
+        if (posts.length) {
+          resolve(posts[0]);
+        } else {
+          reject("Post not found");
+        }
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  // update
+  update() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        this.cleanUp();
+        this.validate();
+        if (!this.errors.length) {
+          await postsCollection.findOneAndUpdate(
+            { _id: ObjectId(this.postId) },
+            {
+              $set: {
+                title: this.data.title,
+                body: this.data.body,
+              },
+            }
+          );
+          resolve("success");
+        } else {
+          resolve("failed");
+        }
+      } catch {
         resolve("failed");
       }
-    } catch {
-      resolve("failed");
-    }
-  });
-};
-// === Simple function ===
-Post.deletePost = function (postId, postOwner) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let post = await Post.getSinglePost(postId, postOwner);
-      if (post.postOwner) {
-        await postCollection.deleteOne({ _id: ObjectId(postId) });
-        resolve();
+    });
+  }
+  // delete
+  delete(postId, currentUserId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let post = await this.readSingle(postId, currentUserId);
+        if (post.postOwner) {
+          await postsCollection.deleteOne({ _id: ObjectId(postId) });
+          resolve();
+        } else {
+          reject();
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+  // find profile post
+  async findProfilePost(profileId) {
+    let posts = await this.resuablePostQuery([
+      { $match: { author: ObjectId(profileId) } },
+      { $sort: { createdDate: -1 } },
+    ]);
+    return posts;
+  }
+  // post count
+  postCount(profileId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let count = await postsCollection.countDocuments({
+          author: ObjectId(profileId),
+        });
+        resolve(count);
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  // search
+  search(searchTerm) {
+    return new Promise(async (resolve, reject) => {
+      // check search term
+      if (typeof searchTerm == "string") {
+        // look in db
+        let posts = await this.resuablePostQuery(
+          // 1st operation
+          [{ $match: { $text: { $search: searchTerm } } }],
+          // ownerId (don't need)
+          undefined,
+          // finalOperation
+          [{ $sort: { score: { $meta: "textScore" } } }]
+        );
+        resolve(posts);
       } else {
         reject();
       }
-    } catch {
-      reject();
-    }
-  });
-};
-Post.resuablePostQuery = function (operations, ownerId, finalOperation = []) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // custom operations
-      let aggOperations = operations
-        .concat([
-          {
-            $lookup: {
-              from: "users", // colection to relate
-              localField: "author", // local field
-              foreignField: "_id", // relate field
-              as: "authorDocument", // match result
-            },
-          },
-          {
-            $project: {
-              title: 1,
-              body: 1,
-              createdDate: 1,
-              authorId: "$author",
-              author: { $arrayElemAt: ["$authorDocument", 0] },
-            },
-          },
-        ])
-        .concat(finalOperation);
-      // perform aggregate
-      let posts = await postCollection.aggregate(aggOperations).toArray();
-      // filter out author field
-      posts = posts.map((post) => {
-        // post owner
-        post.postOwner = post.authorId.equals(ownerId);
-        // for search no leak
-        // post.authorId = undefined;
+    });
+  }
+  // get feed
+  getFeed(currentUserId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // get following
+        let followingUser = await followsCollection
+          .find({ follower: ObjectId(currentUserId) })
+          .toArray();
+        followingUser = followingUser.map((doc) => {
+          return doc.following;
+        });
+        // get following post
+        let posts = this.resuablePostQuery([
+          { $match: { author: { $in: followingUser } } },
+          { $sort: { createdDate: -1 } },
+        ]);
+        resolve(posts);
+      } catch {
+        reject();
+      }
+    });
+  }
+}
 
-        // author
-        post.author = {
-          username: post.author.username,
-          avatar: new User(post.author, true).avatar,
-        };
-        return post;
-      });
-      resolve(posts);
-    } catch (err) {
-      reject(err);
-    }
-  });
-};
-Post.getSinglePost = function (id, ownerId) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // check id
-      if (typeof id != "string" || !ObjectId.isValid(id)) {
-        reject("Invalid actions");
-        return;
-      }
-      // pass custom operations
-      let posts = await Post.resuablePostQuery(
-        [{ $match: { _id: ObjectId(id) } }],
-        ownerId
-      );
-      // check post
-      if (posts.length) {
-        resolve(posts[0]);
-      } else {
-        reject("Post not found");
-      }
-    } catch (err) {
-      reject(err.message);
-    }
-  });
-};
-Post.findAuthorPost = function (id) {
-  return Post.resuablePostQuery([
-    { $match: { author: ObjectId(id) } },
-    { $sort: { createdDate: -1 } },
-  ]);
-};
-Post.search = function (searchTerm) {
-  return new Promise(async (resolve, reject) => {
-    if (typeof searchTerm == "string") {
-      let posts = await Post.resuablePostQuery(
-        [{ $match: { $text: { $search: searchTerm } } }],
-        undefined,
-        [{ $sort: { score: { $meta: "textScore" } } }]
-      );
-      resolve(posts);
-    } else {
-      reject();
-    }
-  });
-};
-Post.countPost = function (id) {
-  return new Promise(async (resolve, reject) => {
-    let count = await postCollection.countDocuments({ author: ObjectId(id) });
-    resolve(count);
-  });
-};
-Post.getFeed = async function (id) {
-  // get followers
-  let followedUser = await followsCollection
-    .find({ authorId: ObjectId(id) })
-    .toArray();
-  followedUser = followedUser.map((followDoc) => {
-    return followDoc.followedId;
-  });
-  // get follower posts
-  return Post.resuablePostQuery([
-    { $match: { author: { $in: followedUser } } },
-    { $sort: { createdDate: -1 } },
-  ]);
-};
 module.exports = Post;
 
-// === Note ===
-// before resuable post query
-// Post.getSinglePost = function (id) {
+// notes
+// read (single post)
+// readSingle(postId, currentUserId) {
 //   return new Promise(async (resolve, reject) => {
 //     try {
-//       // check id
-//       if (typeof id != "string" || !ObjectId.isValid(id)) {
-//         reject("Invalid actions");
+//       // check post id
+//       if (typeof postId != "string" || !ObjectId.isValid(postId)) {
+//         this.errors.push("Invalid request");
+//         reject(this.errors);
+//         // end function
 //         return;
 //       }
-//       // get post
-//       let posts = await postCollection
+//       // query post
+//       let posts = await postsCollection
 //         .aggregate([
-//           // 1. find matching post id
-//           { $match: { _id: ObjectId(id) } },
-//           // 2. look up users collection to form relationship
+//           { $match: { _id: ObjectId(postId) } },
 //           {
 //             $lookup: {
-//               from: "users", // colection to relate
-//               localField: "author", // local field
-//               foreignField: "_id", // relate field
-//               as: "authorDocument", // match result
+//               from: "users",
+//               localField: "author",
+//               foreignField: "_id",
+//               as: "authorDetail",
 //             },
 //           },
-//           // 3. custom return for 'as'
 //           {
 //             $project: {
 //               title: 1,
 //               body: 1,
 //               createdDate: 1,
-//               // merge author with authorDocument
-//               author: { $arrayElemAt: ["$authorDocument", 0] },
+//               authorId: "$author",
+//               author: { $arrayElemAt: ["$authorDetail", 0] },
 //             },
 //           },
 //         ])
 //         .toArray();
-//       // filter out author field
 //       posts = posts.map((post) => {
+//         // set post owner for delete
+//         post.postOwner = post.authorId.equals(currentUserId);
+//         // overwrite author return
 //         post.author = {
 //           username: post.author.username,
-//           // User model getAvatar
 //           avatar: new User(post.author, true).avatar,
+//           _id: post.author._id,
 //         };
 //         return post;
 //       });
-//       // check post
+//       // check post existence
 //       if (posts.length) {
-//         // will return array of posts
-//         // we just need the first one
 //         resolve(posts[0]);
 //       } else {
 //         reject("Post not found");
@@ -293,4 +300,4 @@ module.exports = Post;
 //       reject(err.message);
 //     }
 //   });
-// };
+// }

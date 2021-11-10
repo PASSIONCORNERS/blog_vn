@@ -17,7 +17,7 @@
         <% if (user && !isProfile) { if (isFollowing) { %>
         <!-- unfollow -->
         <form
-          action="/removeFollow/<%= profileId %>"
+          action="/unfollow/<%= profileUserId %>"
           method="POST"
           class="
             bg-red-500
@@ -33,12 +33,13 @@
           "
         >
           <i class="fas fa-plus"></i>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button>Unfollow</button>
         </form>
         <% } else { %>
         <!-- follow -->
         <form
-          action="/addFollow/<%= profileId %>"
+          action="/follow/<%= profileUserId %>"
           method="POST"
           class="
             bg-gradient-to-r
@@ -56,6 +57,7 @@
           "
         >
           <i class="fas fa-plus"></i>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button>Follow</button>
         </form>
         <% } } %>
@@ -85,7 +87,7 @@
           <!-- avatar -->
           <div class="mr-4">
             <img
-              src="<%= post.author.avatar %>"
+              src="<%= profileAvatar %>"
               alt="avatar"
               class="w-10 h-10 object-cover rounded-full border"
             />
@@ -94,11 +96,7 @@
             <!-- title -->
             <p class="text-1xl font-bold mr-3">
               <%= post.title %>
-              <span class="font-light text-xs">
-                (<%= post.createdDate.getMonth() + 1 %>/<%=
-                post.createdDate.getDate() %>/<%= post.createdDate.getFullYear()
-                %> %>)</span
-              >
+              <span class="font-light text-xs"> </span>
             </p>
           </div>
         </div>

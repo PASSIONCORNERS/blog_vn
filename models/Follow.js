@@ -4,95 +4,141 @@ const User = require("./User");
 const ObjectId = require("mongodb").ObjectId;
 
 class Follow {
-  constructor(followedUserId, authorId) {
-    this.followedUserId = followedUserId;
-    this.authorId = authorId;
+  constructor(followUserId, currentUserId) {
+    this.followUserId = followUserId;
+    this.currentUserId = currentUserId;
     this.errors = [];
   }
+  // clean up
   cleanUp() {
-    if (typeof this.followedUserId != "string") {
-      this.followedUserId = "";
+    if (typeof this.followUserId != "string") {
+      this.followUserId = "";
     }
   }
+  // validate
   async validate(action) {
-    // check user
-    let followedAccount = await usersCollection.findOne({
-      _id: ObjectId(this.followedUserId),
+    // check user existence
+    let followAccount = await usersCollection.findOne({
+      _id: ObjectId(this.followUserId),
     });
-    if (followedAccount == "") {
-      this.errors.push("Cannot find user.");
+    if (followAccount == "") {
+      this.errors.push("Cannot find this user.");
     }
     // check if followed
     let isFollowed = await followsCollection.findOne({
-      followedId: ObjectId(this.followedUserId),
-      authorId: ObjectId(this.authorId),
+      following: ObjectId(this.followUserId),
+      follower: ObjectId(this.currentUserId),
     });
     if (action == "follow") {
       if (isFollowed) {
-        this.errors.push("Already following.");
+        this.errors.push("You already following this user.");
       }
     }
-    if (!action == "unfollow") {
-      if (isFollowed) {
-        this.errors.push("Invalid action.");
+    if (action == "unfollow") {
+      if (!isFollowed) {
+        this.errors.push("You are not following this user.");
       }
     }
-    // cannot follow yourself
-    if (this.followedUserId == this.authorId) {
+    // check self
+    if (this.followUserId == this.currentUserId) {
       this.errors.push("You cannot follow yourself 😅");
     }
   }
-  create() {
-    return new Promise(async (resolve, reject) => {
-      this.cleanUp();
-      await this.validate("follow");
-      if (!this.errors.length) {
-        await followsCollection.insertOne({
-          followedId: ObjectId(this.followedUserId),
-          authorId: ObjectId(this.authorId),
-        });
-        resolve();
-      } else {
-        reject(this.errors);
-      }
-    });
-  }
-  delete() {
-    return new Promise(async (resolve, reject) => {
-      this.cleanUp();
-      await this.validate("unfollow");
-      if (!this.errors.length) {
-        await followsCollection.deleteOne({
-          followedId: ObjectId(this.followedUserId),
-          authorId: ObjectId(this.authorId),
-        });
-        resolve();
-      } else {
-        reject(this.errors);
-      }
-    });
-  }
-  async isFollowing(followedId, visitorId) {
-    let followDoc = await followsCollection.findOne({
-      followedId: ObjectId(followedId),
-      authorId: ObjectId(visitorId),
-    });
-    if (followDoc) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  getFollowerById(id) {
+  follow() {
     return new Promise(async (resolve, reject) => {
       try {
+        this.cleanUp();
+        await this.validate("follow");
+        // no error
+        if (!this.errors.length) {
+          await followsCollection.insertOne({
+            following: ObjectId(this.followUserId),
+            follower: ObjectId(this.currentUserId),
+          });
+          resolve();
+        } else {
+          reject(this.errors);
+        }
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  unfollow() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        this.cleanUp();
+        await this.validate("unfollow");
+        // no error
+        if (!this.errors.length) {
+          await followsCollection.deleteOne({
+            following: ObjectId(this.followUserId),
+            follower: ObjectId(this.currentUserId),
+          });
+          resolve();
+        } else {
+          reject(this.errors);
+        }
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  isFollowing(followUserId, currentUserId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let followDoc = await followsCollection.findOne({
+          following: ObjectId(followUserId),
+          follower: ObjectId(currentUserId),
+        });
+        // if followDoc return a document that mean current user is following this profile
+        if (followDoc) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  followerCount(profileId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let count = await followsCollection.countDocuments({
+          // following because how many follower is following you
+          following: ObjectId(profileId),
+        });
+        resolve(count);
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  followingCount(profileId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let count = await followsCollection.countDocuments({
+          // follower because how many user YOU ARE following
+          follower: ObjectId(profileId),
+        });
+        resolve(count);
+      } catch (err) {
+        reject(err.message);
+      }
+    });
+  }
+  getFollower(profileId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // aggregate
         let followers = await followsCollection
           .aggregate([
-            { $match: { followedId: ObjectId(id) } },
+            { $match: { following: ObjectId(profileId) } },
             {
               $lookup: {
                 from: "users",
-                localField: "authorId",
+                localField: "follower",
                 foreignField: "_id",
                 as: "userDoc",
               },
@@ -107,29 +153,31 @@ class Follow {
           ])
           .toArray();
         followers = followers.map((follower) => {
+          // get avatar
           let user = new User(follower, true);
           return {
             username: follower.username,
-            avatar: user.avatar,
             _id: follower._id,
+            avatar: user.avatar,
           };
         });
         resolve(followers);
-      } catch {
-        reject();
+      } catch (err) {
+        reject(err.message);
       }
     });
   }
-  getFollowingById(id) {
+  getFollowing(profileId) {
     return new Promise(async (resolve, reject) => {
       try {
+        // aggregate
         let followings = await followsCollection
           .aggregate([
-            { $match: { authorId: ObjectId(id) } },
+            { $match: { follower: ObjectId(profileId) } },
             {
               $lookup: {
                 from: "users",
-                localField: "followedId",
+                localField: "following",
                 foreignField: "_id",
                 as: "userDoc",
               },
@@ -144,34 +192,20 @@ class Follow {
           ])
           .toArray();
         followings = followings.map((following) => {
+          // get avatar
           let user = new User(following, true);
           return {
             username: following.username,
-            avatar: user.avatar,
             _id: following._id,
+            avatar: user.avatar,
           };
         });
         resolve(followings);
-      } catch {
-        reject();
+      } catch (err) {
+        reject(err.message);
       }
     });
   }
-  countFollower = function (id) {
-    return new Promise(async (resolve, reject) => {
-      let count = await followsCollection.countDocuments({
-        followedId: ObjectId(id),
-      });
-      resolve(count);
-    });
-  };
-  countFollowing = function (id) {
-    return new Promise(async (resolve, reject) => {
-      let count = await followsCollection.countDocuments({
-        authorId: ObjectId(id),
-      });
-      resolve(count);
-    });
-  };
 }
+
 module.exports = Follow;

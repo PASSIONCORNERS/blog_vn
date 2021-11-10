@@ -19,27 +19,25 @@
     <!-- === Header === -->
     <header class="bg-black">
       <div class="container mx-auto px-4">
+        <% if (user) { %>
         <!-- Logged In -->
-        <% if(user){ %>
         <nav class="flex items-center justify-between py-4">
-          <!-- logo -->
           <div>
             <a href="/">
               <h1 class="text-3xl text-white uppercase">Blog VN</h1>
             </a>
           </div>
           <div class="relative flex items-center">
-            <!-- hello -->
             <div>
               <p class="text-white mr-4">Hello, <%= user.username %></p>
             </div>
-            <!-- search -->
+
             <div id="search-open">
               <i
                 class="fas fa-search text-white mr-4 text-1xl cursor-pointer"
               ></i>
             </div>
-            <!-- avatar -->
+
             <div id="menu-button">
               <img
                 src="<%= user.avatar %>"
@@ -47,7 +45,7 @@
                 class="w-10 h-10 object-cover rounded-full cursor-pointer"
               />
             </div>
-            <!-- menu -->
+
             <div
               id="header-menu"
               class="
@@ -101,24 +99,28 @@
                   >
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Log Out</span>
+                    <input
+                      type="hidden"
+                      name="_csrf"
+                      value="<%= csrfToken %>"
+                    />
                   </button>
                 </form>
               </ul>
             </div>
           </div>
         </nav>
-        <!-- Guest -->
         <% } else { %>
+        <!-- Guest -->
         <nav
           class="flex flex-col md:flex-row items-center justify-between py-4"
         >
-          <!-- logo -->
           <div>
             <a href="/" class="outline-none">
               <h1 class="text-3xl text-white uppercase">Blog VN</h1>
             </a>
           </div>
-          <!-- form -->
+
           <div>
             <form
               action="/login"
@@ -155,6 +157,7 @@
                   focus:outline-none focus:ring focus:ring-indigo-500
                 "
               />
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button
                 class="
                   bg-gradient-to-r

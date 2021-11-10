@@ -1,142 +1,152 @@
+const ObjectId = require("mongodb").ObjectId;
 const User = require("../models/User");
 const Post = require("../models/Post");
 const Follow = require("../models/Follow");
-const ObjectId = require("mongodb").ObjectId;
 
 // register
-exports.register = async (req, res) => {
-  // pass in data
-  let user = new User(req.body);
-  user
+exports.register = (req, res) => {
+  // use model
+  new User(req.body)
     .register()
     .then(() => {
-      // flash message
-      req.flash("success", "Please check your email 📧");
-      req.session.save(function () {
+      req.flash("success", "Please check your emai 📧 ");
+      req.session.save(() => {
         res.redirect("/");
       });
     })
     .catch((err) => {
       req.flash("errors", err);
-      req.session.save(function () {
+      req.session.save(() => {
         res.redirect("/");
       });
     });
 };
 // activate
 exports.activate = (req, res) => {
-  let user = new User(req.session.token);
-  user
+  new User(req.session.token)
     .activate()
     .then(() => {
-      req.flash("success", "Account activated, you can now log in 🤗");
-      req.session.save(function () {
+      req.flash("success", "Account activated, you can now log in 😃");
+      req.session.save(() => {
         res.redirect("/");
       });
       // destroy token
       req.session.destroy();
     })
     .catch((err) => {
-      req.flash("errors", err);
-      // res.send(err);
-      req.session.save(function () {
+      req.flash("errors", err.message);
+      req.session.save(() => {
         res.redirect("/");
       });
     });
 };
 // login
-exports.login = async (req, res) => {
+exports.login = (req, res) => {
   let user = new User(req.body);
   user
     .login()
-    .then(() => {
+    .then((result) => {
       // pass user data to session
       req.session.user = {
-        username: user.data.username,
+        username: result.username,
+        _id: result._id,
         avatar: user.avatar,
-        _id: user.data._id,
       };
-      // save user session
-      req.session.save(function () {
-        // redirect to dashboard
+      req.session.save(() => {
         res.redirect("/");
       });
     })
     .catch((err) => {
+      // not err.message because it's from error arrays
       req.flash("errors", err);
-      req.session.save(function () {
-        // redirect to dashboard
+      req.session.save(() => {
         res.redirect("/");
       });
     });
 };
 // logout
 exports.logout = (req, res) => {
-  req.session.destroy(function () {
+  req.session.destroy(() => {
     res.redirect("/");
   });
 };
-// logged in
-exports.loggedIn = (req, res, next) => {
-  // check if user is logged in
+// loggedIn
+exports.loggedIn = async (req, res, next) => {
   if (req.session.user) {
     next();
   } else {
-    req.flash("errors ", "Please log in");
+    req.flash("errors", "Please login");
     req.session.save(function () {
       res.redirect("/");
     });
   }
 };
-// find user
+// find User
 exports.findUser = (req, res, next) => {
-  User.findUser(req.params.userId)
-    .then((userId) => {
-      // create new property on the request object
-      req.profileUser = userId;
+  new User()
+    .findUser(req.params.userId)
+    .then((userProfile) => {
+      req.profileUser = userProfile;
       next();
     })
-    .catch(() => {
+    .catch((err) => {
+      console.log(err);
       res.render("404");
     });
 };
-// shared data
-exports.sharedProfile = async (req, res, next) => {
-  let isYourProfile = false;
+// share profile data
+exports.shareProfileData = async (req, res, next) => {
+  // get is following & is profile
   let isFollowing = false;
+  let isProfile = false;
   if (req.session.user) {
-    isFollowing = new Follow()
-      .isFollowing(req.params.userId, req.postOwner)
+    new Follow()
+      .isFollowing(req.params.userId, req.currentUserId)
       .then((value) => {
-        isYourProfile = ObjectId(req.params.userId).equals(
-          ObjectId(req.postOwner)
-        );
+        // get isFollowing value
         isFollowing = value;
-        req.isYourProfile = isYourProfile;
+        // get isProfile value
+        isProfile = ObjectId(req.params.userId).equals(
+          ObjectId(req.currentUserId)
+        );
+        // pass isFollowing value to req
         req.isFollowing = isFollowing;
+        // pass isProfile value to req
+        req.isProfile = isProfile;
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log(err);
         next(false);
       });
   }
-  // get counts for tab
-  let postCount = Post.countPost(req.params.userId);
-  let followerCount = new Follow().countFollower(req.params.userId);
-  let followingCount = new Follow().countFollowing(req.params.userId);
-  let [postCountResult, followerCountResult, followingCountResult] =
-    await Promise.all([postCount, followerCount, followingCount]);
-  // pass to req
-  req.postCount = postCountResult;
-  req.followerCount = followerCountResult;
-  req.followingCount = followingCountResult;
+  // get counts for Tab
+  let postCountPromise = new Post().postCount(
+    // from findUser mw
+    req.profileUser._id
+  );
+  let followerCountPromise = new Follow().followerCount(req.profileUser._id);
+  let followingCountPromise = new Follow().followingCount(req.profileUser._id);
+  let [postCount, followerCount, followingCount] = await Promise.all([
+    postCountPromise,
+    followerCountPromise,
+    followingCountPromise,
+  ]);
+  req.postCount = postCount;
+  req.followerCount = followerCount;
+  req.followingCount = followingCount;
   next();
 };
 // renders
-exports.renderHome = async (req, res) => {
+exports.renderHome = (req, res) => {
   if (req.session.user) {
-    // fetch post
-    let posts = await Post.getFeed(req.session.user._id);
-    res.render("dashboard", { posts });
+    new Post()
+      .getFeed(req.currentUserId)
+      .then((posts) => {
+        res.render("dashboard", { posts });
+      })
+      .catch(() => {
+        res.render("signup");
+      });
   } else {
     res.render("signup");
   }
@@ -148,24 +158,24 @@ exports.renderActivate = (req, res) => {
     req.session.token = req.params.token;
     res.render("activate");
   } else {
-    req.flash("errors", "Please try again");
-    req.session.save(function () {
-      res.render("activate");
+    req.flash("errors", "Please register again.");
+    req.session.save(() => {
+      res.render("/");
     });
   }
 };
 exports.renderProfile = (req, res) => {
-  // pull in profile posts
-  Post.findAuthorPost(req.params.userId)
+  new Post()
+    .findProfilePost(req.params.userId)
     .then((posts) => {
       res.render("profile", {
         currentPage: "profile",
         profilePosts: posts,
-        profileId: req.params.userId,
         profileUsername: req.profileUser.username,
         profileAvatar: req.profileUser.avatar,
+        profileUserId: req.profileUser._id,
         isFollowing: req.isFollowing,
-        isProfile: req.isYourProfile,
+        isProfile: req.isProfile,
         counts: {
           postCount: req.postCount,
           followerCount: req.followerCount,
@@ -174,46 +184,22 @@ exports.renderProfile = (req, res) => {
       });
     })
     .catch((err) => {
+      console.log(err);
       res.render("404");
     });
 };
 exports.renderFollower = (req, res) => {
   new Follow()
-    .getFollowerById(req.params.userId)
-    .then((az) => {
-      console.log();
-      res.render("profile-followers", {
+    .getFollower(req.profileUser._id)
+    .then((followers) => {
+      res.render("followers", {
         currentPage: "followers",
-        followers: az,
-        profileId: req.params.userId,
+        followers: followers,
         profileUsername: req.profileUser.username,
         profileAvatar: req.profileUser.avatar,
+        profileUserId: req.profileUser._id,
         isFollowing: req.isFollowing,
-        isProfile: req.isYourProfile,
-        counts: {
-          postCount: req.postCount,
-          followerCount: req.followerCount,
-          followingCount: req.followingCount,
-        },
-      });
-    })
-    .catch(() => {
-      res.render("404");
-    });
-};
-exports.renderFollowing = (req, res) => {
-  new Follow()
-    .getFollowingById(req.params.userId)
-    .then((az) => {
-      console.log();
-      res.render("profile-followings", {
-        currentPage: "followings",
-        followings: az,
-        profileId: req.params.userId,
-        profileUsername: req.profileUser.username,
-        profileAvatar: req.profileUser.avatar,
-        isFollowing: req.isFollowing,
-        isProfile: req.isYourProfile,
+        isProfile: req.isProfile,
         counts: {
           postCount: req.postCount,
           followerCount: req.followerCount,
@@ -222,6 +208,31 @@ exports.renderFollowing = (req, res) => {
       });
     })
     .catch((err) => {
+      console.log(err.message);
+      res.render("404");
+    });
+};
+exports.renderFollowing = (req, res) => {
+  new Follow()
+    .getFollowing(req.profileUser._id)
+    .then((followings) => {
+      res.render("followings", {
+        currentPage: "followings",
+        followings: followings,
+        profileUsername: req.profileUser.username,
+        profileAvatar: req.profileUser.avatar,
+        profileUserId: req.profileUser._id,
+        isFollowing: req.isFollowing,
+        isProfile: req.isProfile,
+        counts: {
+          postCount: req.postCount,
+          followerCount: req.followerCount,
+          followingCount: req.followingCount,
+        },
+      });
+    })
+    .catch((err) => {
+      console.log(err.message);
       res.render("404");
     });
 };

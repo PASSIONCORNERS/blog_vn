@@ -1,4 +1,4 @@
-export default class Activiate {
+export default class Activate {
   // selector
   constructor() {
     this.form = document.querySelector("#activate");

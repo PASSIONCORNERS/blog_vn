@@ -1,7 +1,8 @@
 <%- include('includes/header')%>
-
 <div class="container mx-auto px-4">
   <h1 class="text-center text-3xl mt-20">Create a blog post 😊</h1>
+  <!-- === Flash Message === -->
+  <%- include('includes/flash') %>
   <div
     class="
       bg-gradient-to-r
@@ -42,6 +43,7 @@
           focus:outline-none focus:ring focus:ring-indigo-500
         "
       ></textarea>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button
         class="
           mt-4
